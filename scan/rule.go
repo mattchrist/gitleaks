@@ -21,6 +21,8 @@ import (
 
 const (
 	diffAddPrefix           = "+"
+	diffRemovePrefix        = "-"
+	diffCommentPrefix       = "\\"
 	diffAddFilePrefix       = "+++ b"
 	diffAddFilePrefixSlash  = "+++ b/"
 	diffLineSignature       = " @@"
@@ -253,7 +255,11 @@ func extractAndInjectLineNumber(leak *manager.Leak, bundle *Bundle, repo *Repo) 
 					currLine = -1
 				}
 			}
-			currLine++
+			// only increment line counter if it's a real addition, not a removal, hunk signature, or comment (ex "\ No newline at end of file")
+			// better to do a `if strings.HasPrefix(txt, diffAddPrefix)` ? not sure what other kinds of lines to expect in a patch
+			if !strings.HasPrefix(txt, diffRemovePrefix) && !strings.HasSuffix(txt, diffLineSignature) && !strings.HasPrefix(txt, diffCommentPrefix) {
+				currLine++
+			}
 		}
 	case commitScan:
 		if bundle.Commit == nil {
